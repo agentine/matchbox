@@ -3,7 +3,7 @@
  * Replaces: picomatch
  */
 
-import { braces } from './braces.js';
+import { bracesForGlob, BRACE_OPEN, BRACE_CLOSE, BRACE_PIPE } from './braces.js';
 
 export interface GlobOptions {
   /** Match dotfiles (hidden files starting with .) — default false */
@@ -107,7 +107,7 @@ function expandBracesInPattern(pattern: string): string {
   if (!pattern.includes('{')) return pattern;
 
   try {
-    return braces(pattern);
+    return bracesForGlob(pattern);
   } catch {
     // If braces expansion fails, return original pattern
     return pattern;
@@ -151,7 +151,7 @@ const POSIX_CLASSES: Record<string, string> = {
  * - Backslash escaping
  * - Dot-file handling
  */
-function globToRegexSource(pattern: string, dot: boolean): string {
+function globToRegexSource(pattern: string, dot: boolean, inQuantifierExtglob = false): string {
   const len = pattern.length;
   let result = '';
   let i = 0;
@@ -184,7 +184,7 @@ function globToRegexSource(pattern: string, dot: boolean): string {
       i + 1 < len &&
       pattern[i + 1] === '('
     ) {
-      const extResult = parseExtglob(pattern, i, dot);
+      const extResult = parseExtglob(pattern, i, dot, inQuantifierExtglob);
       if (extResult) {
         result += extResult.source;
         i = extResult.end;
@@ -272,10 +272,27 @@ function globToRegexSource(pattern: string, dot: boolean): string {
       continue;
     }
 
-    // ( ) | — pass through from brace expansion (regex alternation groups)
+    // Brace expansion sentinels → regex alternation operators
+    if (ch === BRACE_OPEN) {
+      result += '(';
+      i++;
+      continue;
+    }
+    if (ch === BRACE_CLOSE) {
+      result += ')';
+      i++;
+      continue;
+    }
+    if (ch === BRACE_PIPE) {
+      result += '|';
+      i++;
+      continue;
+    }
+
+    // Literal ( ) | — escape them (not from brace expansion)
     if (ch === '(' || ch === ')' || ch === '|') {
-      result += ch;
-      // Don't change segmentStart — these are grouping, not content
+      result += '\\' + ch;
+      segmentStart = false;
       i++;
       continue;
     }
@@ -380,7 +397,8 @@ function parseCharacterClass(
 function parseExtglob(
   pattern: string,
   start: number,
-  dot: boolean
+  dot: boolean,
+  inQuantifierExtglob = false
 ): ParseResult | null {
   const type = pattern[start];
   // start+1 should be '('
@@ -420,15 +438,22 @@ function parseExtglob(
 
   if (depth !== 0) return null; // Unmatched paren
 
+  // Determine if this extglob uses a quantifier (* or +).
+  // If we're already inside a quantifier extglob, downgrade inner * and + to @
+  // to prevent nested quantifiers (ReDoS via catastrophic backtracking).
+  const isQuantifier = type === '*' || type === '+';
+  const effectiveType = (inQuantifierExtglob && isQuantifier) ? '@' : type;
+  const childInQuantifier = inQuantifierExtglob || isQuantifier;
+
   // Split by | at top level within the extglob
   const alternatives = splitExtglobAlternatives(content);
 
-  // Convert each alternative to regex
-  const altSources = alternatives.map((alt) => globToRegexSource(alt, dot));
+  // Convert each alternative to regex, propagating quantifier nesting flag
+  const altSources = alternatives.map((alt) => globToRegexSource(alt, dot, childInQuantifier));
   const group = altSources.join('|');
 
   let source: string;
-  switch (type) {
+  switch (effectiveType) {
     case '!':
       // !(pat) — match anything that does NOT match pat
       source = `(?:(?!(?:${group}))[^/])*`;

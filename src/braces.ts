@@ -8,6 +8,13 @@ import { fillRange, toRegexRange } from './range.js';
 const MAX_DEPTH = 10;
 const MAX_EXPANSION = 10_000;
 
+// Sentinel characters (Unicode Private Use Area) used by braces() regex mode
+// to mark alternation groups so globToRegexSource can distinguish them from
+// literal (, ), | in the glob pattern.
+export const BRACE_OPEN = '\uE000';
+export const BRACE_CLOSE = '\uE001';
+export const BRACE_PIPE = '\uE002';
+
 /**
  * Expand braces to an array of strings.
  *
@@ -26,6 +33,18 @@ export function expand(pattern: string): string[] {
  * E.g., braces("{a,b,c}") -> "(a|b|c)", braces("{1..5}") -> "([1-5])"
  */
 export function braces(pattern: string): string {
+  return bracesInner(pattern, 0)
+    .replaceAll(BRACE_OPEN, '(')
+    .replaceAll(BRACE_CLOSE, ')')
+    .replaceAll(BRACE_PIPE, '|');
+}
+
+/**
+ * Like braces() but returns sentinel characters for ( ) | so that
+ * globToRegexSource can distinguish brace-expansion operators from
+ * literal characters in the glob pattern.
+ */
+export function bracesForGlob(pattern: string): string {
   return bracesInner(pattern, 0);
 }
 
@@ -262,14 +281,14 @@ function bracesContentToRegex(
           // With step, expand and create alternation of specific values
           try {
             const values = fillRange(startStr, endStr, step);
-            return `(${values.join('|')})`;
+            return `${BRACE_OPEN}${values.join(BRACE_PIPE)}${BRACE_CLOSE}`;
           } catch {
             // Invalid range — not a valid expansion
           }
         }
         const lo = startStr < endStr ? startStr : endStr;
         const hi = startStr < endStr ? endStr : startStr;
-        return `([${lo}-${hi}])`;
+        return `${BRACE_OPEN}[${lo}-${hi}]${BRACE_CLOSE}`;
       }
       // Numeric range
       const numStart = Number(startStr);
@@ -280,12 +299,12 @@ function bracesContentToRegex(
           // instead of generating a range regex that matches all numbers
           try {
             const values = fillRange(numStart, numEnd, step);
-            return `(${values.join('|')})`;
+            return `${BRACE_OPEN}${values.join(BRACE_PIPE)}${BRACE_CLOSE}`;
           } catch {
             // Invalid range — not a valid expansion
           }
         }
-        return `(${toRegexRange(numStart, numEnd)})`;
+        return `${BRACE_OPEN}${toRegexRange(numStart, numEnd)}${BRACE_CLOSE}`;
       }
     }
     return null; // Not a valid expansion
@@ -300,7 +319,7 @@ function bracesContentToRegex(
   }
 
   const regexParts = parts.map((p) => bracesInner(p, depth + 1));
-  return `(${regexParts.join('|')})`;
+  return `${BRACE_OPEN}${regexParts.join(BRACE_PIPE)}${BRACE_CLOSE}`;
 }
 
 function isLetter(ch: string): boolean {

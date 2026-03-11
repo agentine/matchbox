@@ -199,6 +199,25 @@ describe('isMatch', () => {
       // !(ts) should not match "ts"
       expect(isMatch('foo.ts', '*.!(ts)')).toBe(false);
     });
+
+    it('nested extglobs do not cause ReDoS', () => {
+      const start = Date.now();
+      globRe('+(+(a))').test('a'.repeat(25) + 'X');
+      expect(Date.now() - start).toBeLessThan(100);
+    });
+
+    it('triple nested extglobs do not cause ReDoS', () => {
+      const start = Date.now();
+      globRe('+(+(+(a)))').test('a'.repeat(30) + 'X');
+      expect(Date.now() - start).toBeLessThan(100);
+    });
+
+    it('nested extglobs still match correctly', () => {
+      expect(isMatch('aaa', '+(+(a))')).toBe(true);
+      expect(isMatch('a', '+(+(a))')).toBe(true);
+      expect(isMatch('', '+(+(a))')).toBe(false);
+      expect(isMatch('b', '+(+(a))')).toBe(false);
+    });
   });
 
   describe('negation prefix !', () => {
@@ -277,6 +296,23 @@ describe('isMatch', () => {
 
     it('matches paths with directories', () => {
       expect(isMatch('src/foo.js', 'src/foo.js')).toBe(true);
+    });
+
+    it('escapes literal | (not regex alternation)', () => {
+      expect(isMatch('a|b', 'a|b')).toBe(true);
+      expect(isMatch('a', 'a|b')).toBe(false);
+      expect(isMatch('b', 'a|b')).toBe(false);
+    });
+
+    it('escapes literal ( ) (not regex groups)', () => {
+      expect(isMatch('(foo)', '(foo)')).toBe(true);
+      expect(isMatch('foo', '(foo)')).toBe(false);
+    });
+
+    it('brace expansion still produces alternation', () => {
+      expect(isMatch('foo.js', '*.{js,ts}')).toBe(true);
+      expect(isMatch('foo.ts', '*.{js,ts}')).toBe(true);
+      expect(isMatch('foo.css', '*.{js,ts}')).toBe(false);
     });
   });
 
