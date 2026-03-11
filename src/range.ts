@@ -21,6 +21,8 @@ export function isNumber(value: unknown): boolean {
   return false;
 }
 
+const MAX_RANGE_SIZE = 100_000;
+
 /**
  * Fill a range of numbers or letters.
  */
@@ -80,6 +82,12 @@ function fillLetterRange(
   const endCode = end.charCodeAt(0);
   const descending = startCode > endCode;
   const absStep = Math.abs(step || 1);
+
+  const rangeSize = Math.floor(Math.abs(endCode - startCode) / absStep) + 1;
+  if (rangeSize > MAX_RANGE_SIZE) {
+    throw new RangeError(`Range too large: ${rangeSize} elements (max ${MAX_RANGE_SIZE})`);
+  }
+
   const results: string[] = [];
 
   if (descending) {
@@ -109,6 +117,12 @@ function fillNumericRange(
 ): string[] {
   const descending = start > end;
   const absStep = Math.abs(step || 1);
+
+  const rangeSize = Math.floor(Math.abs(end - start) / absStep) + 1;
+  if (rangeSize > MAX_RANGE_SIZE) {
+    throw new RangeError(`Range too large: ${rangeSize} elements (max ${MAX_RANGE_SIZE})`);
+  }
+
   const results: string[] = [];
 
   // Detect zero-padding from original string inputs

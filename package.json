@@ -1,5 +1,5 @@
 {
-  "name": "matchbox",
+  "name": "@agentine/matchbox",
   "version": "0.1.0",
   "description": "A zero-dependency, consolidated glob matching library that replaces the fragmented micromatch ecosystem.",
   "type": "module",

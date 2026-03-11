@@ -295,3 +295,14 @@ describe('toRegexRange', () => {
     }
   });
 });
+
+describe('fillRange DoS protection', () => {
+  it('throws for ranges exceeding MAX_RANGE_SIZE', () => {
+    expect(() => fillRange(0, 100_000_001)).toThrow(/Range too large/);
+  });
+
+  it('allows ranges within the limit', () => {
+    const result = fillRange(0, 99);
+    expect(result).toHaveLength(100);
+  });
+});

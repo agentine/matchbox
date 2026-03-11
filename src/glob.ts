@@ -340,11 +340,11 @@ function parseCharacterClass(
   }
 
   // Allow ] as first char in class (literal)
+  let classContent = '';
   if (i < len && pattern[i] === ']') {
+    classContent += '\\]';
     i++;
   }
-
-  let classContent = '';
 
   while (i < len) {
     const ch = pattern[i];
@@ -455,8 +455,9 @@ function parseExtglob(
   let source: string;
   switch (effectiveType) {
     case '!':
-      // !(pat) — match anything that does NOT match pat
-      source = `(?:(?!(?:${group}))[^/])*`;
+      // !(pat) — match anything that does NOT match the full pattern
+      // Uses end-anchored lookahead so only exact matches are rejected
+      source = `(?:(?!(?:${group})$)[^/])*`;
       break;
     case '?':
       // ?(pat) — match zero or one occurrence of pat

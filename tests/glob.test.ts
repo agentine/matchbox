@@ -108,6 +108,19 @@ describe('isMatch', () => {
       expect(isMatch('d.js', '[^abc].js')).toBe(true);
       expect(isMatch('b.js', '[^abc].js')).toBe(false);
     });
+
+    it('matches ] as first char in character class', () => {
+      // []] matches literal ]
+      expect(isMatch(']', '[]]')).toBe(true);
+      expect(isMatch('a', '[]]')).toBe(false);
+      // [!]] matches anything except ]
+      expect(isMatch('a', '[!]]')).toBe(true);
+      expect(isMatch(']', '[!]]')).toBe(false);
+      // []a] matches ] or a
+      expect(isMatch(']', '[]a]')).toBe(true);
+      expect(isMatch('a', '[]a]')).toBe(true);
+      expect(isMatch('b', '[]a]')).toBe(false);
+    });
   });
 
   describe('POSIX character classes', () => {
@@ -198,6 +211,19 @@ describe('isMatch', () => {
       expect(isMatch('foo.css', '*.!(ts)')).toBe(true);
       // !(ts) should not match "ts"
       expect(isMatch('foo.ts', '*.!(ts)')).toBe(false);
+    });
+
+    it('!(pat) rejects exact match only, not substring match', () => {
+      // tsx != ts, so !(ts) should match tsx
+      expect(isMatch('foo.tsx', '*.!(ts)')).toBe(true);
+      expect(isMatch('foo.tss', '*.!(ts)')).toBe(true);
+      // ts == ts, so !(ts) should NOT match
+      expect(isMatch('foo.ts', '*.!(ts)')).toBe(false);
+      // multi-alt negation
+      expect(isMatch('foo.py', '*.!(js|ts)')).toBe(true);
+      expect(isMatch('foo.js', '*.!(js|ts)')).toBe(false);
+      expect(isMatch('foo.ts', '*.!(js|ts)')).toBe(false);
+      expect(isMatch('foo.jsx', '*.!(js|ts)')).toBe(true);
     });
 
     it('nested extglobs do not cause ReDoS', () => {
