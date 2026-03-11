@@ -114,13 +114,11 @@ function fillNumericRange(
   // Detect zero-padding from original string inputs
   let padWidth = 0;
   if (opts?.pad) {
-    const startStr = String(rawStart);
-    const endStr = String(rawEnd);
-    padWidth = Math.max(startStr.length, endStr.length);
-  } else if (typeof rawStart === 'string' && rawStart.length > 1 && rawStart[0] === '0') {
-    padWidth = Math.max(String(rawStart).length, String(rawEnd).length);
-  } else if (typeof rawEnd === 'string' && rawEnd.length > 1 && rawEnd[0] === '0') {
-    padWidth = Math.max(String(rawStart).length, String(rawEnd).length);
+    padWidth = Math.max(digitLength(String(rawStart)), digitLength(String(rawEnd)));
+  } else if (typeof rawStart === 'string' && hasLeadingZero(rawStart)) {
+    padWidth = Math.max(digitLength(String(rawStart)), digitLength(String(rawEnd)));
+  } else if (typeof rawEnd === 'string' && hasLeadingZero(rawEnd)) {
+    padWidth = Math.max(digitLength(String(rawStart)), digitLength(String(rawEnd)));
   }
 
   if (descending) {
@@ -138,6 +136,17 @@ function fillNumericRange(
   }
 
   return results;
+}
+
+/** Check if a string has leading zeros after stripping an optional minus sign. */
+function hasLeadingZero(raw: string): boolean {
+  const digits = raw.startsWith('-') ? raw.slice(1) : raw;
+  return digits.length > 1 && digits[0] === '0';
+}
+
+/** Return the number of digit characters (excluding an optional leading minus sign). */
+function digitLength(raw: string): number {
+  return raw.startsWith('-') ? raw.length - 1 : raw.length;
 }
 
 function padValue(num: number, width: number): string {

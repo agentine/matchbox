@@ -102,6 +102,18 @@ describe('fillRange', () => {
     it('zero-pads three-digit range', () => {
       expect(fillRange('001', '003')).toEqual(['001', '002', '003']);
     });
+
+    it('auto-detects zero-padding for negative strings', () => {
+      expect(fillRange('-01', '-05')).toEqual(['-01', '-02', '-03', '-04', '-05']);
+    });
+
+    it('auto-detects zero-padding for negative three-digit strings', () => {
+      expect(fillRange('-001', '-003')).toEqual(['-001', '-002', '-003']);
+    });
+
+    it('handles cross-zero range with zero-padded inputs', () => {
+      expect(fillRange('-02', '02')).toEqual(['-02', '-01', '00', '01', '02']);
+    });
   });
 
   describe('letter ranges', () => {
