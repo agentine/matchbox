@@ -1,0 +1,54 @@
+{
+  "name": "matchbox",
+  "version": "0.1.0",
+  "description": "A zero-dependency, consolidated glob matching library that replaces the fragmented micromatch ecosystem.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./glob": {
+      "types": "./dist/glob.d.ts",
+      "import": "./dist/glob.js"
+    },
+    "./braces": {
+      "types": "./dist/braces.d.ts",
+      "import": "./dist/braces.js"
+    },
+    "./range": {
+      "types": "./dist/range.d.ts",
+      "import": "./dist/range.js"
+    },
+    "./scan": {
+      "types": "./dist/scan.d.ts",
+      "import": "./dist/scan.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "glob",
+    "match",
+    "micromatch",
+    "picomatch",
+    "braces",
+    "pattern",
+    "wildcard",
+    "regex"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.4.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
