@@ -253,9 +253,20 @@ function bracesContentToRegex(
       /^(-?\w+)\.\.(-?\w+)(?:\.\.(-?\w+))?$/
     );
     if (rangeMatch) {
-      const [, startStr, endStr] = rangeMatch;
+      const [, startStr, endStr, stepStr] = rangeMatch;
+      const step = stepStr !== undefined ? Number(stepStr) : undefined;
+
       // Letter range
       if (isLetter(startStr) && isLetter(endStr)) {
+        if (step !== undefined && step !== 1) {
+          // With step, expand and create alternation of specific values
+          try {
+            const values = fillRange(startStr, endStr, step);
+            return `(${values.join('|')})`;
+          } catch {
+            // Invalid range — not a valid expansion
+          }
+        }
         const lo = startStr < endStr ? startStr : endStr;
         const hi = startStr < endStr ? endStr : startStr;
         return `([${lo}-${hi}])`;
@@ -264,6 +275,16 @@ function bracesContentToRegex(
       const numStart = Number(startStr);
       const numEnd = Number(endStr);
       if (Number.isFinite(numStart) && Number.isFinite(numEnd)) {
+        if (step !== undefined) {
+          // With step, expand and create alternation of specific values
+          // instead of generating a range regex that matches all numbers
+          try {
+            const values = fillRange(numStart, numEnd, step);
+            return `(${values.join('|')})`;
+          } catch {
+            // Invalid range — not a valid expansion
+          }
+        }
         return `(${toRegexRange(numStart, numEnd)})`;
       }
     }

@@ -204,6 +204,24 @@ describe('braces', () => {
     expect(result).toBe('([1-9]|[1-9][0-9]|100)');
   });
 
+  describe('step ranges in regex mode', () => {
+    it('handles numeric range with step', () => {
+      expect(braces('{1..10..2}')).toBe('(1|3|5|7|9)');
+    });
+
+    it('handles numeric range with step of 3', () => {
+      expect(braces('{1..10..3}')).toBe('(1|4|7|10)');
+    });
+
+    it('handles letter range with step', () => {
+      expect(braces('{a..j..2}')).toBe('(a|c|e|g|i)');
+    });
+
+    it('handles numeric range without step (uses toRegexRange)', () => {
+      expect(braces('{1..5}')).toBe('([1-5])');
+    });
+  });
+
   describe('ReDoS protection', () => {
     it('throws on deeply nested patterns in regex mode', () => {
       const deep = '{'.repeat(15) + 'a,b' + '}'.repeat(15);
