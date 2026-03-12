@@ -32,13 +32,15 @@ export function globRe(pattern: string, options?: GlobOptions): RegExp {
   const { dot = false, nocase = false, contains = false } = options ?? {};
   const flags = nocase ? 'i' : '';
 
-  // Handle negation prefix
-  let negated = false;
+  // Handle negation prefix — strip multiple ! prefixes and track odd/even
+  // count.  Even number of ! prefixes cancel out; odd means negated.
+  let negCount = 0;
   let work = pattern;
-  if (work.startsWith('!') && !work.startsWith('!(')) {
-    negated = true;
+  while (work.startsWith('!') && !work.startsWith('!(')) {
+    negCount++;
     work = work.slice(1);
   }
+  const negated = negCount % 2 === 1;
 
   // Sanitize PUA sentinel characters (U+E000–E002) used internally by brace
   // expansion.  If these appear in user-supplied patterns they would be

@@ -285,6 +285,24 @@ describe('isMatch', () => {
       expect(isMatch('test/foo.js', '!test/**')).toBe(false);
       expect(isMatch('src/foo.js', '!test/**')).toBe(true);
     });
+
+    it('double negation !! cancels out (#121)', () => {
+      // !! = even count of !, so no negation — matches like the bare pattern
+      expect(isMatch('foo.ts', '!!*.ts')).toBe(true);
+      expect(isMatch('foo.js', '!!*.ts')).toBe(false);
+    });
+
+    it('triple negation !!! is a single negation (#121)', () => {
+      // !!! = odd count of !, so negated
+      expect(isMatch('foo.ts', '!!!*.ts')).toBe(false);
+      expect(isMatch('foo.js', '!!!*.ts')).toBe(true);
+    });
+
+    it('quadruple negation !!!! cancels out (#121)', () => {
+      // !!!! = even count, no negation
+      expect(isMatch('foo.ts', '!!!!*.ts')).toBe(true);
+      expect(isMatch('foo.js', '!!!!*.ts')).toBe(false);
+    });
   });
 
   describe('backslash escape', () => {
