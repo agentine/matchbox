@@ -40,6 +40,13 @@ export function globRe(pattern: string, options?: GlobOptions): RegExp {
     work = work.slice(1);
   }
 
+  // Sanitize PUA sentinel characters (U+E000–E002) used internally by brace
+  // expansion.  If these appear in user-supplied patterns they would be
+  // mis-interpreted as brace-expansion operators and can produce invalid
+  // regex, causing an uncaught SyntaxError.  Escape them so they are
+  // treated as literal characters instead.
+  work = sanitizePUASentinels(work);
+
   // Expand braces first
   work = expandBracesInPattern(work);
 
@@ -532,4 +539,24 @@ function escapeRegex(ch: string): string {
     return '\\' + ch;
   }
   return ch;
+}
+
+/**
+ * Replace PUA sentinel characters (U+E000, U+E001, U+E002) in a user-supplied
+ * pattern with backslash-escaped forms so the glob parser treats them as
+ * literal characters instead of brace-expansion operators.
+ */
+function sanitizePUASentinels(pattern: string): string {
+  // Fast path: most patterns won't contain PUA characters
+  if (
+    !pattern.includes(BRACE_OPEN) &&
+    !pattern.includes(BRACE_CLOSE) &&
+    !pattern.includes(BRACE_PIPE)
+  ) {
+    return pattern;
+  }
+  return pattern
+    .replaceAll(BRACE_OPEN, `\\${BRACE_OPEN}`)
+    .replaceAll(BRACE_CLOSE, `\\${BRACE_CLOSE}`)
+    .replaceAll(BRACE_PIPE, `\\${BRACE_PIPE}`);
 }

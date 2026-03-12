@@ -391,6 +391,26 @@ describe('isMatch', () => {
       expect(isMatch('src/index.test.js', 'src/**/*.test.{js,ts}')).toBe(true);
       expect(isMatch('src/index.test.css', 'src/**/*.test.{js,ts}')).toBe(false);
     });
+
+    it('PUA sentinel chars in user patterns do not cause SyntaxError (#102)', () => {
+      // U+E000, U+E001, U+E002 are used internally as brace-expansion
+      // sentinels.  If they appear in user input they should be treated
+      // as literal characters, not as operators.
+      expect(() => globRe('\uE000')).not.toThrow();
+      expect(() => globRe('\uE001')).not.toThrow();
+      expect(() => globRe('\uE002')).not.toThrow();
+      expect(() => globRe('\uE000\uE001\uE002')).not.toThrow();
+
+      // Should match the literal PUA characters
+      expect(isMatch('\uE000', '\uE000')).toBe(true);
+      expect(isMatch('\uE001', '\uE001')).toBe(true);
+      expect(isMatch('\uE002', '\uE002')).toBe(true);
+      expect(isMatch('a', '\uE000')).toBe(false);
+
+      // PUA chars mixed with normal glob syntax should still work
+      expect(isMatch('\uE000.js', '*.js')).toBe(true);
+      expect(isMatch('\uE000', '*')).toBe(true);
+    });
   });
 });
 
