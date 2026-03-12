@@ -136,11 +136,20 @@ function matchesPatternArray(
   const excludes: ((s: string) => boolean)[] = [];
 
   for (const p of patterns) {
-    if (p.startsWith('!') && !p.startsWith('!(')) {
-      // Negated pattern — strip the ! and use the rest as an exclude.
-      excludes.push(globMatch(p.slice(1), options));
+    // Strip multiple ! prefixes and track odd/even count.
+    // Even number of ! prefixes cancel out; odd means negated.
+    let negCount = 0;
+    let work = p;
+    while (work.startsWith('!') && !work.startsWith('!(')) {
+      negCount++;
+      work = work.slice(1);
+    }
+    if (negCount % 2 === 1) {
+      // Odd ! count — negated pattern, use as exclude.
+      excludes.push(globMatch(work, options));
     } else {
-      includes.push(globMatch(p, options));
+      // Even ! count (including 0) — include pattern.
+      includes.push(globMatch(work, options));
     }
   }
 

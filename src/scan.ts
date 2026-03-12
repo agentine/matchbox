@@ -30,14 +30,16 @@ export function scan(pattern: string): ScanResult {
     return { base: '.', glob: '', isGlob: false, negated: false, prefix: '' };
   }
 
-  // Handle negation prefix
-  let negated = false;
+  // Handle negation prefix — strip multiple ! prefixes and track odd/even
+  // count.  Even number of ! prefixes cancel out; odd means negated.
+  let negCount = 0;
   let work = pattern;
 
-  if (work.startsWith('!') && !work.startsWith('!(')) {
-    negated = true;
+  while (work.startsWith('!') && !work.startsWith('!(')) {
+    negCount++;
     work = work.slice(1);
   }
+  const negated = negCount % 2 === 1;
 
   // Find where glob characters begin
   const globStart = findGlobStart(work);

@@ -35,6 +35,27 @@ describe('isMatch', () => {
     expect(isMatch('foo.ts', ['!*.ts'])).toBe(false);
   });
 
+  it('should handle double-negation !! in pattern arrays (#138)', () => {
+    // !!*.ts cancels out to an include for *.ts
+    expect(isMatch('foo.js', ['*.js', '!!*.ts'])).toBe(true);
+    expect(isMatch('foo.ts', ['*.js', '!!*.ts'])).toBe(true);
+    // Without the *.js include, !!*.ts alone still acts as include
+    expect(isMatch('foo.ts', ['!!*.ts'])).toBe(true);
+    expect(isMatch('foo.js', ['!!*.ts'])).toBe(false);
+  });
+
+  it('should handle triple-negation !!! in pattern arrays (#138)', () => {
+    // !!!*.ts = odd count, so it is an exclude for *.ts
+    expect(isMatch('foo.js', ['*.js', '!!!*.ts'])).toBe(true);
+    expect(isMatch('foo.ts', ['*.js', '!!!*.ts'])).toBe(false);
+  });
+
+  it('should handle quadruple-negation !!!! in pattern arrays (#138)', () => {
+    // !!!!*.ts = even count, so it is an include for *.ts
+    expect(isMatch('foo.ts', ['!!!!*.ts'])).toBe(true);
+    expect(isMatch('foo.js', ['!!!!*.ts'])).toBe(false);
+  });
+
   it('should match globstar', () => {
     expect(isMatch('src/a/b/c.js', '**/*.js')).toBe(true);
     expect(isMatch('c.js', '**/*.js')).toBe(true);

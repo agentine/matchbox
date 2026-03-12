@@ -81,6 +81,50 @@ describe('scan', () => {
         prefix: '!',
       });
     });
+
+    it('double negation !! cancels out (#138)', () => {
+      const result = scan('!!test/**');
+      expect(result).toEqual({
+        base: 'test',
+        glob: '**',
+        isGlob: true,
+        negated: false,
+        prefix: 'test/',
+      });
+    });
+
+    it('double negation !! without base cancels out (#138)', () => {
+      const result = scan('!!*.ts');
+      expect(result).toEqual({
+        base: '.',
+        glob: '*.ts',
+        isGlob: true,
+        negated: false,
+        prefix: '',
+      });
+    });
+
+    it('triple negation !!! is a single negation (#138)', () => {
+      const result = scan('!!!test/**');
+      expect(result).toEqual({
+        base: 'test',
+        glob: '**',
+        isGlob: true,
+        negated: true,
+        prefix: '!test/',
+      });
+    });
+
+    it('quadruple negation !!!! cancels out (#138)', () => {
+      const result = scan('!!!!*.ts');
+      expect(result).toEqual({
+        base: '.',
+        glob: '*.ts',
+        isGlob: true,
+        negated: false,
+        prefix: '',
+      });
+    });
   });
 
   describe('non-glob patterns', () => {
