@@ -454,11 +454,18 @@ function parseExtglob(
 
   let source: string;
   switch (effectiveType) {
-    case '!':
-      // !(pat) — match anything that does NOT match the full pattern
-      // Uses end-anchored lookahead so only exact matches are rejected
-      source = `(?:(?!(?:${group})$)[^/])*`;
+    case '!': {
+      // !(pat) — match anything that does NOT match the full pattern.
+      // We convert the remaining pattern after !(pat) into a regex suffix
+      // and include it inside the lookahead so the negation applies to the
+      // whole remaining input, not just the !(pat) fragment.
+      const suffix = pattern.slice(i);
+      const suffixRegex = suffix.length > 0
+        ? globToRegexSource(suffix, dot, inQuantifierExtglob)
+        : '';
+      source = `(?!(?:${group})${suffixRegex}$)[^/]*?`;
       break;
+    }
     case '?':
       // ?(pat) — match zero or one occurrence of pat
       source = `(?:${group})?`;

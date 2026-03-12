@@ -226,6 +226,35 @@ describe('isMatch', () => {
       expect(isMatch('foo.jsx', '*.!(js|ts)')).toBe(true);
     });
 
+    it('standalone !(pat) matches strings that are not pat (#103)', () => {
+      // "aa" is not "a", so !(a) should match
+      expect(isMatch('aa', '!(a)')).toBe(true);
+      expect(isMatch('ba', '!(a)')).toBe(true);
+      expect(isMatch('aaa', '!(a)')).toBe(true);
+      // "a" IS "a", so !(a) should NOT match
+      expect(isMatch('a', '!(a)')).toBe(false);
+      // Empty string is not "a"
+      expect(isMatch('', '!(a)')).toBe(true);
+      // Multi-char patterns
+      expect(isMatch('xabc', '!(abc)')).toBe(true);
+      expect(isMatch('ab', '!(abc)')).toBe(true);
+      expect(isMatch('abcd', '!(abc)')).toBe(true);
+      expect(isMatch('abc', '!(abc)')).toBe(false);
+    });
+
+    it('!(pat) with suffix text correctly rejects matches (#99)', () => {
+      // "foo.js" has basename "foo" which IS "foo", so !(foo).js rejects it
+      expect(isMatch('foo.js', '!(foo).js')).toBe(false);
+      // "bar.js" has basename "bar" which is NOT "foo"
+      expect(isMatch('bar.js', '!(foo).js')).toBe(true);
+      // "foobar.js" basename is "foobar" != "foo"
+      expect(isMatch('foobar.js', '!(foo).js')).toBe(true);
+      // Multi-alternative with suffix
+      expect(isMatch('foo.js', '!(foo|bar).js')).toBe(false);
+      expect(isMatch('bar.js', '!(foo|bar).js')).toBe(false);
+      expect(isMatch('baz.js', '!(foo|bar).js')).toBe(true);
+    });
+
     it('nested extglobs do not cause ReDoS', () => {
       const start = Date.now();
       globRe('+(+(a))').test('a'.repeat(25) + 'X');
