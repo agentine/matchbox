@@ -1,10 +1,14 @@
 {
   "name": "@agentine/matchbox",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A zero-dependency, consolidated glob matching library that replaces the fragmented micromatch ecosystem.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agentine/matchbox.git"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
